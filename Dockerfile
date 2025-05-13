@@ -1,64 +1,51 @@
-FROM alpine:3.21 as base
+FROM ubuntu:24.04
+ARG SNAP_VERSION="12.0.0"
 
-RUN apk add openjdk8
-
-
-FROM base as build
-
-LABEL authors="Carmen Tawalika,Markus Neteler"
-LABEL maintainer="tawalika@mundialis.de,neteler@mundialis.de"
-
+# not sure, if needed
+ENV DEBIAN_FRONTEND noninteractive
 USER root
 
-ENV BUILD_PACKAGES="\
-      gawk \
-      gcc \
-      gcompat \
-      git \
-      maven \
-      musl-dev \
-      python3-dev \
-      wget \
-      "
+# Install dependencies and tools
+RUN apt-get update && apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends --no-install-suggests \
+    build-essential \
+    libgfortran5 \
+    locales \
+    python3 \
+    python3-dev \
+    python3-pip \
+    python3-setuptools \
+    git \
+    vim \
+    wget \
+    zip \
+    && apt-get autoremove -y \
+    && apt-get clean -y
 
-ENV PACKAGES="\
-      fontconfig \
-      gcompat \
-      libgfortran \
-      openjdk8 \
-      python3 \
-      vim \
-      ttf-dejavu \
-      zip \
-      "
+# Set the locale
+ENV LANG en_US.utf8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.utf8
+RUN locale-gen en_US.UTF-8
 
-RUN echo "Install dependencies and tools";\
-    apk update; \
-    apk add --no-cache --virtual .build-deps $BUILD_PACKAGES; \
-    apk add --no-cache $PACKAGES; \
-    echo "Install step done"
-
-ENV LC_ALL "en_US.UTF-8"
 # SNAP wants the current folder '.' included in LD_LIBRARY_PATH
-ENV LD_LIBRARY_PATH ".:/usr/lib/jvm/java-8-openjdk/jre/lib/amd64/server/:$LD_LIBRARY_PATH"
-
-# install SNAPPY
-ENV JAVA_HOME "/usr/lib/jvm/java-1.8-openjdk"
-
-COPY snap /src/snap
-RUN sh /src/snap/install.sh
-
-
-FROM base as snappy
-
-RUN apk add openjdk8 python3 ttf-dejavu
 ENV LD_LIBRARY_PATH ".:$LD_LIBRARY_PATH"
-COPY --from=build /root/.snap /root/.snap
-COPY --from=build /usr/local/snap /usr/local/snap
-# update SNAP from Web, requires font
-RUN /usr/local/snap/bin/snap --nosplash --nogui --modules --update-all
 
-# add gpt to PATH
-ENV PATH="${PATH}:/usr/local/snap/bin"
-# test gpt
-RUN gpt -h
+#RUN apt-get install default-jdk maven -y
+#ENV JAVA_HOME "/usr/lib/jvm/java-11-openjdk-amd64/"
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
+# don't copy 1GB installer file into container, just mount it.
+RUN --mount=type=bind,source=esa-snap_all_linux-${SNAP_VERSION}.sh,target=/tmp/esa-snap_all_linux-${SNAP_VERSION}.sh \
+    --mount=type=bind,source=response.varfile,target=/tmp/response.varfile \
+    sh /tmp/esa-snap_all_linux-${SNAP_VERSION}.sh -q -varfile /tmp/response.varfile
+RUN /usr/local/snap/bin/snap --nosplash --nogui --modules --update-all
+RUN update-alternatives --remove python /usr/bin/python3
+
+RUN echo "export PATH=\$PATH:/usr/local/snap/bin/" >> /root/.bashrc
+
+# Reduce the image size
+RUN apt-get autoremove -y
+RUN apt-get clean -y
+RUN rm -rf /src
+
+ENTRYPOINT ["/bin/bash"]
