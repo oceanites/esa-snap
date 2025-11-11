@@ -1,0 +1,17 @@
+name: Build docker images
+
+on:
+  push:
+    branches: [ "s1tbx" ]
+  pull_request:
+    branches: [ "s1tbx" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build the Docker image using only Sentinel-1 toolbox
+      run: docker build -t esa-snap:s1tbx-13 --build-arg SNAP_VERSION=13 --build-arg RESPONSE_FILE=response-s1.varfile .
+    - name: Build the Docker image using only Sentinel-1 toolbox
+      run: docker build -t esa-snap:full-13 --build-arg SNAP_VERSION=13 --build-arg RESPONSE_FILE=response-full.varfile .
