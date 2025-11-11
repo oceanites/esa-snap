@@ -1,5 +1,4 @@
 FROM ubuntu:24.04
-ARG SNAP_VERSION="13.0.0"
 
 # not sure, if needed
 ENV DEBIAN_FRONTEND=noninteractive
@@ -28,10 +27,13 @@ ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.utf8
 RUN locale-gen en_US.UTF-8
 
+ARG SNAP_VERSION
+ARG RESPONSE_FILE
+
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
 # don't copy 1GB installer file into container, just mount it.
 RUN --mount=type=bind,source=esa-snap_all_linux-${SNAP_VERSION}.sh,target=/tmp/esa-snap_all_linux-${SNAP_VERSION}.sh \
-    --mount=type=bind,source=response.varfile,target=/tmp/response.varfile \
+    --mount=type=bind,source=$RESPONSE_FILE,target=/tmp/response.varfile \
     sh /tmp/esa-snap_all_linux-${SNAP_VERSION}.sh -q -varfile /tmp/response.varfile
 RUN /usr/local/snap/bin/snap --nosplash --nogui --modules --update-all
 RUN update-alternatives --remove python /usr/bin/python3
