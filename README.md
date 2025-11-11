@@ -1,4 +1,4 @@
-# ESA SNAP 12 docker images
+# ESA SNAP 13 docker images
 
 Docker images of ESA Sentinel Application Platform (SNAP) from http://step.esa.int/main/toolboxes/snap/
 This is a fork of the code from [mundalis](https://github.com/mundialis/esa-snap).

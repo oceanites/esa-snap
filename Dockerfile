@@ -1,8 +1,8 @@
 FROM ubuntu:24.04
-ARG SNAP_VERSION="12.0.0"
+ARG SNAP_VERSION="13.0.0"
 
 # not sure, if needed
-ENV DEBIAN_FRONTEND noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
 USER root
 
 # Install dependencies and tools
@@ -23,16 +23,11 @@ RUN apt-get update && apt-get upgrade -y && \
     && apt-get clean -y
 
 # Set the locale
-ENV LANG en_US.utf8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.utf8
+ENV LANG=en_US.utf8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.utf8
 RUN locale-gen en_US.UTF-8
 
-# SNAP wants the current folder '.' included in LD_LIBRARY_PATH
-ENV LD_LIBRARY_PATH ".:$LD_LIBRARY_PATH"
-
-#RUN apt-get install default-jdk maven -y
-#ENV JAVA_HOME "/usr/lib/jvm/java-11-openjdk-amd64/"
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
 # don't copy 1GB installer file into container, just mount it.
 RUN --mount=type=bind,source=esa-snap_all_linux-${SNAP_VERSION}.sh,target=/tmp/esa-snap_all_linux-${SNAP_VERSION}.sh \
