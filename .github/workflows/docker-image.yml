@@ -2,16 +2,42 @@ name: Build docker images
 
 on:
   push:
-    branches: [ "s1tbx" ]
+    branches: ["s1tbx"]
   pull_request:
-    branches: [ "s1tbx" ]
+    branches: ["s1tbx"]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      SNAP_VERSION: "13.0.0"
     steps:
-    - uses: actions/checkout@v4
-    - name: Build the Docker image using only Sentinel-1 toolbox
-      run: docker build -t esa-snap:s1tbx-13 --build-arg SNAP_VERSION=13 --build-arg RESPONSE_FILE=response-s1.varfile .
-    - name: Build the Docker image using only Sentinel-1 toolbox
-      run: docker build -t esa-snap:full-13 --build-arg SNAP_VERSION=13 --build-arg RESPONSE_FILE=response-full.varfile .
+      - uses: actions/checkout@v4
+      - name: Cache SNAP installer
+        id: cache-snap
+        uses: actions/cache@v4
+        with:
+          path: |
+            ./esa-snap_all_linux-${{ env.SNAP_VERSION }}.sh
+          key: snap-${{ env.SNAP_VERSION }}
+      - name: download SNAP installer (if missing)
+        if: steps.cache-snap.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          PATH_VERSION="${SNAP_VERSION//0.0/0}"
+          wget --continue "https://step.esa.int/downloads/${PATH_VERSION}/installers/esa-snap_all_linux-${SNAP_VERSION}.sh"
+      - name: build and test SNAP docker images
+        shell: bash
+        run: |
+          TAG_VERSION="${SNAP_VERSION//.0.0/}"
+
+          docker build -t "esa-snap:s1tbx-${TAG_VERSION}" \
+            --build-arg SNAP_VERSION="${SNAP_VERSION}" \
+            --build-arg RESPONSE_FILE="response-s1.varfile" .
+
+          docker build -t "esa-snap:full-${TAG_VERSION}" \
+            --build-arg SNAP_VERSION="${SNAP_VERSION}" \
+            --build-arg RESPONSE_FILE="response-full.varfile" .
+
+          docker run --rm "esa-snap:s1tbx-${TAG_VERSION}" /usr/local/snap/bin/gpt -h
+          docker run --rm "esa-snap:full-${TAG_VERSION}" /usr/local/snap/bin/gpt -h
