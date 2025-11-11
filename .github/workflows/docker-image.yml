@@ -43,7 +43,7 @@ jobs:
           build-args: |
             SNAP_VERSION=${{ env.SNAP_VERSION }}
             RESPONSE_FILE="response-s1.varfile"
-          tags: ghcr.io/${{ github.repository_owner }}/esa-snap:s1tbx-${{ replace(env.SNAP_VERSION, '.0.0', '') }}
+          tags: ghcr.io/${{ github.repository_owner }}/esa-snap:s1tbx-${{ env.SNAP_VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Build and push full (S1+S2) snap install
@@ -54,11 +54,11 @@ jobs:
           build-args: |
             SNAP_VERSION=${{ env.SNAP_VERSION }}
             RESPONSE_FILE="response-full.varfile"
-          tags: ghcr.io/${{ github.repository_owner }}/esa-snap:full-${{ replace(env.SNAP_VERSION, '.0.0', '') }}
+          tags: ghcr.io/${{ github.repository_owner }}/esa-snap:full-${{ env.SNAP_VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: test SNAP docker images
         shell: bash
         run: |
-          docker run --rm ghcr.io/${{ github.repository_owner }}/esa-snap:full-${{ env.SNAP_VERSION//.0.0/ }} /usr/local/snap/bin/gpt -h
-          docker run --rm ghcr.io/${{ github.repository_owner }}/esa-snap:s1tbx-${{ env.SNAP_VERSION//.0.0/ }} /usr/local/snap/bin/gpt -h
+          docker run --rm ghcr.io/${{ github.repository_owner }}/esa-snap:full-${{ env.SNAP_VERSION }} /usr/local/snap/bin/gpt -h
+          docker run --rm ghcr.io/${{ github.repository_owner }}/esa-snap:s1tbx-${{ env.SNAP_VERSION }} /usr/local/snap/bin/gpt -h
