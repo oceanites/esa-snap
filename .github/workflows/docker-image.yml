@@ -5,7 +5,10 @@ on:
     branches: ["s1tbx"]
   pull_request:
     branches: ["s1tbx"]
-
+permissions: # to allow container image pushes
+  contents: read
+  packages: write
+  
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -26,18 +29,38 @@ jobs:
         run: |
           PATH_VERSION="${SNAP_VERSION//0.0/0}"
           wget --continue "https://step.esa.int/downloads/${PATH_VERSION}/installers/esa-snap_all_linux-${SNAP_VERSION}.sh"
-      - name: build and test SNAP docker images
+      - name: login to github container registry GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push s1 toolbox
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          build-args: |
+            SNAP_VERSION=${{ env.SNAP_VERSION }}
+            RESPONSE_FILE="response-s1.varfile"
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/esa-snap:s1tbx-${{ env.SNAP_VERSION//.0.0/ }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Build and push full (S1+S2) snap install
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          build-args: |
+            SNAP_VERSION=${{ env.SNAP_VERSION }}
+            RESPONSE_FILE="response-full.varfile"
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/esa-snap:full-${{ env.SNAP_VERSION//.0.0/ }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: test SNAP docker images
         shell: bash
         run: |
-          TAG_VERSION="${SNAP_VERSION//.0.0/}"
-
-          docker build -t "esa-snap:s1tbx-${TAG_VERSION}" \
-            --build-arg SNAP_VERSION="${SNAP_VERSION}" \
-            --build-arg RESPONSE_FILE="response-s1.varfile" .
-
-          docker build -t "esa-snap:full-${TAG_VERSION}" \
-            --build-arg SNAP_VERSION="${SNAP_VERSION}" \
-            --build-arg RESPONSE_FILE="response-full.varfile" .
-
-          docker run --rm "esa-snap:s1tbx-${TAG_VERSION}" /usr/local/snap/bin/gpt -h
-          docker run --rm "esa-snap:full-${TAG_VERSION}" /usr/local/snap/bin/gpt -h
+          docker run --rm ghcr.io/${{ github.repository_owner }}/esa-snap:full-${{ env.SNAP_VERSION//.0.0/ }} /usr/local/snap/bin/gpt -h
+          docker run --rm ghcr.io/${{ github.repository_owner }}/esa-snap:s1tbx-${{ env.SNAP_VERSION//.0.0/ }} /usr/local/snap/bin/gpt -h
