@@ -44,7 +44,7 @@ jobs:
           push: true
           build-args: |
             SNAP_VERSION=${{ env.SNAP_VERSION }}
-            RESPONSE_FILE="response-s1.varfile"
+            RESPONSE_FILE=response-s1.varfile
           tags: ghcr.io/${{ github.repository_owner }}/esa-snap:s1tbx-${{ env.SNAP_VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -55,7 +55,7 @@ jobs:
           push: true
           build-args: |
             SNAP_VERSION=${{ env.SNAP_VERSION }}
-            RESPONSE_FILE="response-full.varfile"
+            RESPONSE_FILE=response-full.varfile
           tags: ghcr.io/${{ github.repository_owner }}/esa-snap:full-${{ env.SNAP_VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
